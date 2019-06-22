@@ -1,0 +1,38 @@
+.sourceCode .kw, .sourceCode .cf, .sourceCode .bu { color: #4078F2; } /* keyword, control flow, built-in */
+.sourceCode .dt { color: #4078F2; } /* data type */
+.sourceCode .dv, .sourceCode .bn, .sourceCode .fl { color: #C18401; } /* decimal value, non-10-based number, float */
+.sourceCode .ch { color: #50A14F; } /* character */
+.sourceCode .st, .sourceCode .ss, .sourceCode .vs { color: #50A14F; } /* string, special string, verbatim string */
+.sourceCode .co { color: #A0A1A7; } /* comment */
+.sourceCode .ot { color: #A57800; } /* others */
+
+.sourceCode .al { color: #CB4B16; font-weight: bold; } /* warning messages (alerts) */
+.sourceCode .fu { color: #268BD2; } /* function calls */
+.sourceCode .re { } /* region markers */
+.sourceCode .er { color: #D30102; font-weight: bold; } /* errors and wrong syntax */
+
+.sourceCode .cn { } /* constant */
+.sourceCode .sc { color: #C18401; } /* special character */
+.sourceCode .vs { } /* verbatim string */
+.sourceCode .im, .sourceCode .pp { color: #A626A4; } /* import, preprocessor */
+.sourceCode .do { } /* documentation */
+.sourceCode .an { } /* annotation */
+.sourceCode .cv { } /* comment var */
+.sourceCode .va { } /* variable */
+
+.sourceCode .op { } /* operator */
+.sourceCode .ex { } /* extension */
+.sourceCode .at { color: #0184BC; } /* attribute (or Python decorator) */
+.sourceCode .in { } /* information */
+.sourceCode .wa { } /* warning */
+
+
+/* colors inspired by Light One theme from Atom: */
+/* #0184BC; /* cyan */
+/* #4078F2; /* blue */
+/* #A626A4; /* purple */
+/* #50A14F;  /* green */
+/* #E45649; /* red 1 */
+/* #CA1243; /* purplish red */
+/* #C18401; /* brown */
+
