@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Three triangles puzzle | Mika Mustonen</title>
+    <link href="https://fonts.googleapis.com/css?family=Fira+Mono|Fira+Sans:300,400" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/highlight.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0-alpha1/katex.min.css" integrity="sha384-8QOKbPtTFvh/lMY0qPVbXj9hDh+v8US0pD//FcoYFst2lCIf0BmT58+Heqj0IGyx" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0-alpha1/katex.min.js" integrity="sha384-GR8SEkOO1rBN/jnOcQDFcFmwXAevSLx7/Io9Ps1rkxWp983ZIuUGfxivlF/5f5eJ" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0-alpha1/contrib/auto-render.min.js" integrity="sha384-cXpztMJlr2xFXyDSIfRWYSMVCXZ9HeGXvzyKTYrn03rsMAlOtIQVzjty5ULbaP8L" crossorigin="anonymous"></script>
+    </head>
+<body>
+    <div class="wrapper">
+    <div class="navbar">
+    <nav>
+        <h1>Mika Mustonen</h1>
+        <ul>
+            <li><a href="/index.html">Archive</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="mailto:email@mikamustonen.com">Email</a></li>
+        </ul>
+    </nav>
+    </div>
+    
+    <div class="content">
+    <article>
+    <hr>
+<h2>Three triangles puzzle</h2>
+<p class="post-time">May 1, 2020</p>
+<p>I stumbled upon this delightful little geometry puzzle on the <a href="http://datagenetics.com/blog/april32020/index.html">DataGenetics blog</a>:</p>
+<p>There are three identical triangles with bases aligned. If each triangle has an area <span class="math inline"><em>A</em></span>, what is the total area of the two regions <span class="math inline">(<em>B</em> + <em>C</em>)</span> shaded in green?</p>
+<figure>
+<img src="/img/triangle-puzzle-1.png">
+</figure>
+<h3 id="my-solution">My solution</h3>
+<p>My solution relies heavily on finding similar shapes and their scale factors. For clarity, I'm glossing over proving that the shapes I claim are similar actually are, but those details could easily be filled in for rigor.</p>
+First, we can establish a relation between the areas <span class="math inline"><em>B</em></span> and <span class="math inline"><em>C</em></span>: In the figure below, where we have added an auxiliary line on the top of the row of the original triangles (or two more similar upside-down triangles, depending on how you choose to look at it), the red and blue shapes are similar. The blue triangle has the upped edge twice as long as the red one, so the scale factor is two. Therefore the area <span class="math inline"><em>B</em> = 4<em>C</em></span>.
+<figure>
+<img src="/img/triangle-puzzle-2.png">
+</figure>
+In the next figure, the red triangle has the same altitude as <span class="math inline"><em>A</em></span> but the base is three times as long; Therefore its area is <span class="math inline">3<em>A</em></span>.
+<figure>
+<img src="/img/triangle-puzzle-3.png">
+<figcaption>
+...
+</figcaption>
+</figure>
+<p>The ratio of the red triangle to the big gray triangle is the same as the ratio <span class="math inline"><em>D</em> : <em>A</em></span>, again because of similarity of the shapes. The edges of the big gray triangle are three times those of <span class="math inline"><em>A</em></span>, so it has the area <span class="math inline">9<em>A</em></span>. Hence <span class="math inline"><em>D</em> : <em>A</em> = 3<em>A</em> : 9<em>A</em> = 1 : 3</span>. As <span class="math inline"><em>B</em> + <em>D</em> = <em>A</em></span>, that leaves <span class="math inline"><em>B</em> = 2/3 ⋅ <em>A</em></span>.</p>
+<p>Now that we know that <span class="math inline"><em>C</em> = 1/4 ⋅ <em>B</em></span> and <span class="math inline"><em>B</em> = 2/3 ⋅ <em>A</em></span>, the rest is simple arithmetics: <br /><span class="math display">$$
+    B + C = \bigg(1 + \frac{1}{4}\bigg) B = \frac{5}{4} B = \frac{5}{4} \cdot \frac{2}{3}A = \frac{5}{6}A.
+$$</span><br /></p>
+    </article>
+    </div>
+
+    <div class="footer">
+    <footer>
+        <hr>
+        <p>&copy; Mika Mustonen 2013&mdash;2020</p>
+        <p>The views and opinions expressed here are the author's own,
+            and do not necessarily represent those of his employers or affiliations.
+        </p>
+    </footer>
+</div>
+</div>
+    <!-- Tell KaTeX to render all equations now -->
+    <script>renderMathInElement(document.body);</script>
+
+</body>
+</html>
