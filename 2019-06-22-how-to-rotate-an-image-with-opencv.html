@@ -28,57 +28,116 @@
     <hr>
 <h2>How to rotate an image with OpenCV</h2>
 <p class="post-time">June 22, 2019</p>
-<p>Somewhat surprisingly, rotating images in OpenCV is not a simple function call but requires a bit of math to do properly. <a href="https://docs.opencv.org/3.4.6/da/d6e/tutorial_py_geometric_transformations.html">The tutorial in the official documentation</a> does not go into much detail on this, so this is my attempt of explaining how to do this after spending the effort of wrapping my head around the details myself.</p>
-<p>To make sense out of image rotations in OpenCV, we first need to understand the coordinate system used: An image is stored as an array, where the first index runs down and the second one to the right. This order of indexing is exactly how matrix elements are indexed in mathematics, except zero-based. In case of color images, there is also a third index, which indicates the image channel — e.g. the familiar red, green, and blue color channel if the image is represented in the RGB color space.</p>
-<p>However, for geometric image transformations, the coordinate system is a Cartesian one, so the horizontal coordinate comes <em>first</em> and the vertical second. Furthermore, the <span class="math inline"><em>y</em></span> axis points <em>down</em>. This is a common convention in computer graphics, but not in mathematics. So if we want to know what the pixel value at the integer coordinates <span class="math inline">(<em>x</em>, <em>y</em>)</span> in the image is, we have to look at the values at <code>[y, x]</code> (in a grayscale image) or <code>[y, x, :]</code> (color image) in the array.</p>
+<p>Somewhat surprisingly, rotating images in OpenCV is not a simple
+function call but requires a bit of math to do properly. <a
+href="https://docs.opencv.org/3.4.6/da/d6e/tutorial_py_geometric_transformations.html">The
+tutorial in the official documentation</a> does not go into much detail
+on this, so this is my attempt of explaining how to do this after
+spending the effort of wrapping my head around the details myself.</p>
+<p>To make sense out of image rotations in OpenCV, we first need to
+understand the coordinate system used: An image is stored as an array,
+where the first index runs down and the second one to the right. This
+order of indexing is exactly how matrix elements are indexed in
+mathematics, except zero-based. In case of color images, there is also a
+third index, which indicates the image channel — e.g. the familiar red,
+green, and blue color channel if the image is represented in the RGB
+color space.</p>
+<p>However, for geometric image transformations, the coordinate system
+is a Cartesian one, so the horizontal coordinate comes <em>first</em>
+and the vertical second. Furthermore, the <span
+class="math inline"><em>y</em></span> axis points <em>down</em>. This is
+a common convention in computer graphics, but not in mathematics. So if
+we want to know what the pixel value at the integer coordinates <span
+class="math inline">(<em>x</em>,<em>y</em>)</span> in the image is, we
+have to look at the values at <code>[y, x]</code> (in a grayscale image)
+or <code>[y, x, :]</code> (color image) in the array.</p>
 <figure>
 <img src="/img/opencv-array.png">
 <figcaption>
-The array indices and the image coordinates are in a different order: The pixel at coordinates <span class="math inline">(<em>x</em>, <em>y</em>)</span> is found at the array location <code>[y, x]</code> or <code>[y, x, :]</code>.
+The array indices and the image coordinates are in a different order:
+The pixel at coordinates <span
+class="math inline">(<em>x</em>,<em>y</em>)</span> is found at the array
+location <code>[y, x]</code> or <code>[y, x, :]</code>.
 </figcaption>
 </figure>
-<p>The aim here is to rotate an image <span class="math inline"><em>θ</em></span> degrees in a way that none of it gets clipped out. The rotation alone is a linear transformation and straightforward to derive if you're fluent in trigonometry: The new coordinates of the original point <span class="math inline">(<em>x</em>, <em>y</em>)</span> are, using the matrix notation, <br /><span class="math display">$$
+<p>The aim here is to rotate an image <span
+class="math inline"><em>θ</em></span> degrees in a way that none of it
+gets clipped out. The rotation alone is a linear transformation and
+straightforward to derive if you’re fluent in trigonometry: The new
+coordinates of the original point <span
+class="math inline">(<em>x</em>,<em>y</em>)</span> are, using the matrix
+notation, <span class="math display">$$
     \begin{pmatrix} x \\ y \end{pmatrix}
     \to
     \begin{pmatrix} x' \\ y' \end{pmatrix} =
-    \begin{pmatrix} \cos\theta &amp;&amp; \sin\theta \\ -\sin\theta &amp;&amp; \cos\theta \end{pmatrix}
+    \begin{pmatrix} \cos\theta &amp;&amp; \sin\theta \\ -\sin\theta
+&amp;&amp; \cos\theta \end{pmatrix}
     \begin{pmatrix} x \\ y \end{pmatrix}.
-$$</span><br /> Note that the minus sign is chosen here in the way that positive rotations are counterclockwise and takes into account that the <span class="math inline"><em>y</em></span> axis points down.</p>
+$$</span> Note that the minus sign is chosen here in the way that
+positive rotations are counterclockwise and takes into account that the
+<span class="math inline"><em>y</em></span> axis points down.</p>
 <figure>
 <img src="/img/opencv-rotation.png">
 <figcaption>
-We first rotate the image about the origin, then translate it to the first quadrant so that the contents of the original image are clipped off in the new image.
+We first rotate the image about the origin, then translate it to the
+first quadrant so that the contents of the original image are clipped
+off in the new image.
 </figcaption>
 </figure>
-<p>After applying the transformation to the image, OpenCV clips it to the rectangle with the top-left corner at the origin and the bottom-right corner at the destination image size. That's why we also need to translate the image so that the topmost and leftmost points of the rotated image land on the <span class="math inline"><em>x</em></span> and <span class="math inline"><em>y</em></span> axis, respectively, and calculate the size that the rotated image takes (to use as the destination image size). A rotation combined with translation is an <em>affine transformation</em>. We can express the rotation by the angle <span class="math inline"><em>θ</em></span> followed by a translation of <span class="math inline"><em>Δ</em><em>x</em></span> horizontally and <span class="math inline"><em>Δ</em><em>y</em></span> vertically in the matrix notation as <br /><span class="math display">$$
+<p>After applying the transformation to the image, OpenCV clips it to
+the rectangle with the top-left corner at the origin and the
+bottom-right corner at the destination image size. That’s why we also
+need to translate the image so that the topmost and leftmost points of
+the rotated image land on the <span
+class="math inline"><em>x</em></span> and <span
+class="math inline"><em>y</em></span> axis, respectively, and calculate
+the size that the rotated image takes (to use as the destination image
+size). A rotation combined with translation is an <em>affine
+transformation</em>. We can express the rotation by the angle <span
+class="math inline"><em>θ</em></span> followed by a translation of <span
+class="math inline"><em>Δ</em><em>x</em></span> horizontally and <span
+class="math inline"><em>Δ</em><em>y</em></span> vertically in the matrix
+notation as <span class="math display">$$
     \begin{pmatrix} x \\ y \end{pmatrix}
     \to
     \begin{pmatrix} x' \\ y' \end{pmatrix} =
-    \begin{pmatrix} \cos\theta &amp;&amp; \sin\theta &amp;&amp; \Delta x \\ -\sin\theta &amp;&amp; \cos\theta &amp;&amp; \Delta y \end{pmatrix}
+    \begin{pmatrix} \cos\theta &amp;&amp; \sin\theta &amp;&amp; \Delta x
+\\ -\sin\theta &amp;&amp; \cos\theta &amp;&amp; \Delta y \end{pmatrix}
     \begin{pmatrix} x \\ y \\ 1 \end{pmatrix}.
-$$</span><br /> The OpenCV function for applying an affine transformation to an image is called <code>warpAffine</code>, and it takes the original image, the above <span class="math inline">2 × 3</span> matrix, and the destination image size as its parameters.</p>
-<p>OpenCV provides the function <code>getRotationMatrix2D</code> that computes a rotation matrix about an arbitrary point. To get both the needed translation and the destination image size, we can take the corner points of the original image, rotate them by applying the above rotation matrix, and compute the bounding box of those rotated points using the OpenCV function <code>boundingRect</code>, which returns the coordinates of the top-left corner and the width and the height of the bounding box.</p>
+$$</span> The OpenCV function for applying an affine transformation to
+an image is called <code>warpAffine</code>, and it takes the original
+image, the above <span class="math inline">2 × 3</span> matrix, and the
+destination image size as its parameters.</p>
+<p>OpenCV provides the function <code>getRotationMatrix2D</code> that
+computes a rotation matrix about an arbitrary point. To get both the
+needed translation and the destination image size, we can take the
+corner points of the original image, rotate them by applying the above
+rotation matrix, and compute the bounding box of those rotated points
+using the OpenCV function <code>boundingRect</code>, which returns the
+coordinates of the top-left corner and the width and the height of the
+bounding box.</p>
 <p>Putting this all together, we get the following example code:</p>
-<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="im">import</span> cv2
-<span class="im">import</span> numpy <span class="im">as</span> np
-
-image <span class="op">=</span> cv2.imread(<span class="st">&quot;cat.jpg&quot;</span>)
-rotation_angle_degrees <span class="op">=</span> <span class="dv">30</span>  <span class="co"># counterclockwise</span>
-
-<span class="co"># Compute the rotation part of the affine transformation</span>
-transformation_matrix <span class="op">=</span> cv2.getRotationMatrix2D((<span class="dv">0</span>, <span class="dv">0</span>), rotation_angle_degrees, <span class="dv">1</span>)
-
-<span class="co"># Compute the translation and the new image size</span>
-nrows, ncols, _ <span class="op">=</span> image.shape  <span class="co"># note the index order</span>
-original_corners <span class="op">=</span> np.array([[<span class="dv">0</span>, <span class="dv">0</span>], [ncols, <span class="dv">0</span>], [ncols, nrows], [<span class="dv">0</span>, nrows]]).T
-new_corners <span class="op">=</span> np.int32(np.dot(transformation_matrix[:, :<span class="dv">2</span>], original_corners))
-x, y, new_width, new_height <span class="op">=</span> cv2.boundingRect(new_corners.T.reshape(<span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">2</span>))
-transformation_matrix[:, <span class="dv">2</span>] <span class="op">=</span> [<span class="op">-</span>x, <span class="op">-</span>y]
-
-<span class="co"># Note the order of image width and height; they are in image coordinates</span>
-image <span class="op">=</span> cv2.warpAffine(image, transformation_matrix, (new_width, new_height))
-
-cv2.imwrite(<span class="st">&quot;rotated_cat.jpg&quot;</span>, image)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> cv2</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>image <span class="op">=</span> cv2.imread(<span class="st">&quot;cat.jpg&quot;</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>rotation_angle_degrees <span class="op">=</span> <span class="dv">30</span>  <span class="co"># counterclockwise</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the rotation part of the affine transformation</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>transformation_matrix <span class="op">=</span> cv2.getRotationMatrix2D((<span class="dv">0</span>, <span class="dv">0</span>), rotation_angle_degrees, <span class="dv">1</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the translation and the new image size</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>nrows, ncols, _ <span class="op">=</span> image.shape  <span class="co"># note the index order</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>original_corners <span class="op">=</span> np.array([[<span class="dv">0</span>, <span class="dv">0</span>], [ncols, <span class="dv">0</span>], [ncols, nrows], [<span class="dv">0</span>, nrows]]).T</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>new_corners <span class="op">=</span> np.int32(np.dot(transformation_matrix[:, :<span class="dv">2</span>], original_corners))</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>x, y, new_width, new_height <span class="op">=</span> cv2.boundingRect(new_corners.T.reshape(<span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">2</span>))</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>transformation_matrix[:, <span class="dv">2</span>] <span class="op">=</span> [<span class="op">-</span>x, <span class="op">-</span>y]</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Note the order of image width and height; they are in image coordinates</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>image <span class="op">=</span> cv2.warpAffine(image, transformation_matrix, (new_width, new_height))</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>cv2.imwrite(<span class="st">&quot;rotated_cat.jpg&quot;</span>, image)</span></code></pre></div>
 <figure>
 <img src="/img/cat.jpg">
 <figcaption>
@@ -88,7 +147,8 @@ The original image of a goofball cat.
 <figure>
 <img src="/img/rotated_cat.jpg">
 <figcaption>
-The result of rotating the image 30 degrees counterclockwise with the above script.
+The result of rotating the image 30 degrees counterclockwise with the
+above script.
 </figcaption>
 </figure>
     </article>
@@ -97,7 +157,7 @@ The result of rotating the image 30 degrees counterclockwise with the above scri
     <div class="footer">
     <footer>
         <hr>
-        <p>&copy; Mika Mustonen 2013&mdash;2020</p>
+        <p>&copy; Mika Mustonen 2013&mdash;2022</p>
         <p>The views and opinions expressed here are the author's own,
             and do not necessarily represent those of his employers or affiliations.
         </p>
