@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Portable Python scripts with Docker and
+Make | Mika Mustonen</title>
+    <link href="https://fonts.googleapis.com/css?family=Fira+Mono|Fira+Sans:300,400" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/highlight.css">
+    </head>
+<body>
+    <div class="wrapper">
+    <div class="navbar">
+    <nav>
+        <h1>Mika Mustonen</h1>
+        <ul>
+            <li><a href="/index.html">Archive</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="mailto:email@mikamustonen.com">Email</a></li>
+        </ul>
+    </nav>
+    </div>
+    
+    <div class="content">
+    <article>
+    <hr>
+<h2>Portable Python scripts with Docker and Make</h2>
+<p class="post-time">October 21, 2022</p>
+<p>Sometimes you need to share a script you quickly whipped up for some
+one-off task, when your coworker has a very similar task where they
+could use what you have with minor modifications. Getting the script
+working on their machine is not always trivial: You may have different
+Python versions and you most definitely have different
+globally-installed dependencies. The first problem can be solved with
+<code>pyenv</code>, the latter with virtual environments, but getting up
+and running can still be a hassle that feels like an unnecessary detour.
+And it is. It's the 2020s, we may not have flying cars but we have
+Docker.</p>
+<p>Here I show how to create a setup that is as easy to get up and
+running as (1) cloning the repository, (2) running the script. That's
+it, assuming you have Docker and usual Unix/Linux command-line tools at
+your fingertips.</p>
+<p>You can check out the full example at <a
+href="https://github.com/mikamustonen/dockerized-python-example">Github</a>.</p>
+<p>All this may seem like a bit too much overhead for a one-off script.
+But if you make a <code>cookiecutter</code> template out of it and use
+that every time you start a new one-off script, that overhead is
+negligible.</p>
+<h2 id="step-1-create-the-dockerfile">Step 1: Create the Dockerfile</h2>
+<p>The main idea here is to create a Docker image with the dependencies
+of the script, but exclude the actual script. We'll mount that as a
+volume when running the container. The advantage of this approach is
+that we can iteratively improve the script without the overhead of
+building the Docker image unless the dependencies change.</p>
+<p>For the package management we could use plain <code>pip</code>, or
+<code>poetry</code>, or <code>conda</code>, but I've chosen
+<code>pipenv</code> in this example, purely because that's the tool I've
+been mostly working with lately.</p>
+<p>There is no <code>CMD</code> or <code>ENTRYPOINT</code> in this
+<code>Dockerfile</code>. We'll specify the exact Python command in the
+<code>docker run</code> command. That will make it easy to pass along
+command-line parameters.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> python:3.10-slim</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">ENV</span> PYTHONDONTWRITEBYTECODE 1</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">ENV</span> PYTHONUNBUFFERED 1</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">pip</span> install pipenv <span class="kw">&amp;&amp;</span> <span class="ex">apt-get</span> update <span class="kw">&amp;&amp;</span> <span class="ex">apt-get</span> install <span class="at">-y</span> <span class="at">--no-install-recommends</span> gcc</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> Pipfile Pipfile.lock .</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="va">PIPENV_VENV_IN_PROJECT</span><span class="op">=</span>1 <span class="ex">pipenv</span> install</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /src</span></code></pre></div>
+<h2 id="step-2-create-the-makefile">Step 2: Create the Makefile</h2>
+<p>How can we avoid rebuilding the image unless necessary? There's a
+classic tool for that, <code>make</code>. The <code>make</code> tool
+needs a <code>Makefile</code>, which describes a dependency graph of
+files that depend on the other files, plus instructions on how to
+produce those other files.</p>
+<p>There is one problem, however: Docker images are not created as files
+in the working directory, but as images in the local Docker repository,
+so <code>make</code> cannot by default know if the image is older than
+the files it depends on. The trick to solve this is to have a file with
+a last-modified time of last Docker build. I've chosen to call that file
+<code>.build</code> here. We should also put that file in the
+<code>.gitignore</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode Makefile"><code class="sourceCode makefile"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build with `make image_name=&lt;image-name&gt; .build</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ot">.build:</span><span class="dt"> Dockerfile Pipfile Pipfile.lock</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="ch">@</span><span class="fu">echo </span><span class="st">&#39;Building the Docker image...&#39;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    docker build . -f Dockerfile -t <span class="ch">$(</span><span class="dt">image_name</span><span class="ch">)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="ch">@</span><span class="fu">touch .build</span></span></code></pre></div>
+<h2 id="step-3-create-the-run-script">Step 3: Create the run script</h2>
+<p>Now we can bring it all together with a tiny shell script (which I
+named simply <code>run</code>):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-e</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="va">DOCKER_IMAGE_NAME</span><span class="op">=</span>dockerized-python-example</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="at">-s</span> image_name=<span class="va">$DOCKER_IMAGE_NAME</span> .build</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">--rm</span> <span class="at">-i</span> <span class="at">-v</span> <span class="st">&quot;</span><span class="va">$(</span><span class="bu">pwd</span><span class="va">)</span><span class="st">/src&quot;</span>:/src <span class="at">-t</span> <span class="va">$DOCKER_IMAGE_NAME</span> python main.py <span class="st">&quot;</span><span class="va">$@</span><span class="st">&quot;</span></span></code></pre></div>
+<p>The script first runs <code>make</code> in the silent mode, and
+<code>make</code> builds the image if either the <code>.build</code>
+file is missing or has a last-modified timestamp older than any of its
+three dependencies.</p>
+<p>Then the script runs the Python script in the Docker container using
+that image. We mount the <code>src/</code> directory, where I'm placing
+the actual Python script as <code>main.py</code>, and pass all the
+command-line arguments onwards to it.</p>
+<h2 id="step-4-the-rest">Step 4: The rest</h2>
+<p>Now that we've created <code>Dockerfile</code>,
+<code>Makefile</code>, and <code>run</code> script, we only have to add
+a couple of necessary files before we can try this setup.</p>
+<p>We need the <code>src/</code> directory with a <code>main.py</code>
+script -- That will be the script we wanted to make portable.</p>
+<p>Because we chose to use <code>pipenv</code> for dependencies, we
+should create a <code>Pipfile</code> and <code>Pipfile.lock</code>. This
+can be done easily by just running <code>pipenv</code> in the project
+directory, assuming you have it installed system-wide.</p>
+<p>In the end, the overall file structure should look like this:</p>
+<pre><code>project
+ +- src
+ |   +- main.py
+ +- Dockerfile
+ +- Makefile
+ +- Pipfile
+ +- Pipfile.lock
+ +- run</code></pre>
+    </article>
+    </div>
+
+    <div class="footer">
+    <footer>
+        <hr>
+        <p>&copy; Mika Mustonen 2013&mdash;2022</p>
+        <p>The views and opinions expressed here are the author's own,
+            and do not necessarily represent those of his employers or affiliations.
+        </p>
+    </footer>
+</div>
+</div>
+
+</body>
+</html>

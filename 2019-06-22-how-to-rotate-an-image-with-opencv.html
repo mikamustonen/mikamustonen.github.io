@@ -39,7 +39,7 @@ understand the coordinate system used: An image is stored as an array,
 where the first index runs down and the second one to the right. This
 order of indexing is exactly how matrix elements are indexed in
 mathematics, except zero-based. In case of color images, there is also a
-third index, which indicates the image channel — e.g. the familiar red,
+third index, which indicates the image channel — e.g. the familiar red,
 green, and blue color channel if the image is represented in the RGB
 color space.</p>
 <p>However, for geometric image transformations, the coordinate system
@@ -53,40 +53,33 @@ have to look at the values at <code>[y, x]</code> (in a grayscale image)
 or <code>[y, x, :]</code> (color image) in the array.</p>
 <figure>
 <img src="/img/opencv-array.png">
-<figcaption>
-The array indices and the image coordinates are in a different order:
-The pixel at coordinates <span
-class="math inline">(<em>x</em>,<em>y</em>)</span> is found at the array
-location <code>[y, x]</code> or <code>[y, x, :]</code>.
-</figcaption>
+<figcaption>The array indices and the image coordinates are in a different order: The pixel at coordinates $(x, y)$ is found at the array location `[y, x]` or `[y, x, :]`.</figcaption>
 </figure>
+
 <p>The aim here is to rotate an image <span
 class="math inline"><em>θ</em></span> degrees in a way that none of it
 gets clipped out. The rotation alone is a linear transformation and
-straightforward to derive if you’re fluent in trigonometry: The new
+straightforward to derive if you're fluent in trigonometry: The new
 coordinates of the original point <span
 class="math inline">(<em>x</em>,<em>y</em>)</span> are, using the matrix
 notation, <span class="math display">$$
-    \begin{pmatrix} x \\ y \end{pmatrix}
-    \to
-    \begin{pmatrix} x' \\ y' \end{pmatrix} =
-    \begin{pmatrix} \cos\theta &amp;&amp; \sin\theta \\ -\sin\theta
+\begin{pmatrix} x \\ y \end{pmatrix}
+\to
+\begin{pmatrix} x' \\ y' \end{pmatrix} =
+\begin{pmatrix} \cos\theta &amp;&amp; \sin\theta \\ -\sin\theta
 &amp;&amp; \cos\theta \end{pmatrix}
-    \begin{pmatrix} x \\ y \end{pmatrix}.
+\begin{pmatrix} x \\ y \end{pmatrix}.
 $$</span> Note that the minus sign is chosen here in the way that
 positive rotations are counterclockwise and takes into account that the
 <span class="math inline"><em>y</em></span> axis points down.</p>
 <figure>
 <img src="/img/opencv-rotation.png">
-<figcaption>
-We first rotate the image about the origin, then translate it to the
-first quadrant so that the contents of the original image are clipped
-off in the new image.
-</figcaption>
+<figcaption>We first rotate the image about the origin, then translate it to the first quadrant so that the contents of the original image are clipped off in the new image.</figcaption>
 </figure>
+
 <p>After applying the transformation to the image, OpenCV clips it to
 the rectangle with the top-left corner at the origin and the
-bottom-right corner at the destination image size. That’s why we also
+bottom-right corner at the destination image size. That's why we also
 need to translate the image so that the topmost and leftmost points of
 the rotated image land on the <span
 class="math inline"><em>x</em></span> and <span
@@ -98,12 +91,12 @@ class="math inline"><em>θ</em></span> followed by a translation of <span
 class="math inline"><em>Δ</em><em>x</em></span> horizontally and <span
 class="math inline"><em>Δ</em><em>y</em></span> vertically in the matrix
 notation as <span class="math display">$$
-    \begin{pmatrix} x \\ y \end{pmatrix}
-    \to
-    \begin{pmatrix} x' \\ y' \end{pmatrix} =
-    \begin{pmatrix} \cos\theta &amp;&amp; \sin\theta &amp;&amp; \Delta x
-\\ -\sin\theta &amp;&amp; \cos\theta &amp;&amp; \Delta y \end{pmatrix}
-    \begin{pmatrix} x \\ y \\ 1 \end{pmatrix}.
+\begin{pmatrix} x \\ y \end{pmatrix}
+\to
+\begin{pmatrix} x' \\ y' \end{pmatrix} =
+\begin{pmatrix} \cos\theta &amp;&amp; \sin\theta &amp;&amp; \Delta x \\
+-\sin\theta &amp;&amp; \cos\theta &amp;&amp; \Delta y \end{pmatrix}
+\begin{pmatrix} x \\ y \\ 1 \end{pmatrix}.
 $$</span> The OpenCV function for applying an affine transformation to
 an image is called <code>warpAffine</code>, and it takes the original
 image, the above <span class="math inline">2 × 3</span> matrix, and the
@@ -140,16 +133,12 @@ class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a hr
 <span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>cv2.imwrite(<span class="st">&quot;rotated_cat.jpg&quot;</span>, image)</span></code></pre></div>
 <figure>
 <img src="/img/cat.jpg">
-<figcaption>
-The original image of a goofball cat.
-</figcaption>
+<figcaption>The original image of a goofball cat.</figcaption>
 </figure>
+
 <figure>
 <img src="/img/rotated_cat.jpg">
-<figcaption>
-The result of rotating the image 30 degrees counterclockwise with the
-above script.
-</figcaption>
+<figcaption>The result of rotating the image 30 degrees counterclockwise with the above script.</figcaption>
 </figure>
     </article>
     </div>
